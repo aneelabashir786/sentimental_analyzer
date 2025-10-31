@@ -3,17 +3,29 @@ import torch
 from transformers import BertTokenizer, BertForSequenceClassification
 
 # =======================================
-# Load model and tokenizer (cached)
+# Load model and tokenizer from Hugging Face
 # =======================================
 @st.cache_resource
 def load_model():
-    model_path = "sentiment_model"  # folder where your trained model is saved
-    tokenizer = BertTokenizer.from_pretrained(model_path)
-    model = BertForSequenceClassification.from_pretrained(model_path)
+    model_name = "aneelaBashir22f3414/sentiment_model"  # Hugging Face repo path
+
+    # Force re-download by disabling cache use
+    tokenizer = BertTokenizer.from_pretrained(
+        model_name,
+        local_files_only=False,
+        revision=None
+    )
+    model = BertForSequenceClassification.from_pretrained(
+        model_name,
+        local_files_only=False,
+        revision=None
+    )
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
     model.eval()
     return model, tokenizer, device
+
 
 model, tokenizer, device = load_model()
 
@@ -23,7 +35,7 @@ model, tokenizer, device = load_model()
 st.set_page_config(page_title="Sentiment Analysis App", page_icon="💬", layout="centered")
 
 st.title("💬 Sentiment Analysis with BERT")
-st.write("Type a sentence below to analyze its sentiment (**Positive** or **Negative**).")
+st.write("Type a sentence below to analyze its sentiment (Positive or Negative).")
 
 # ---------------------------------------
 # Text input
@@ -35,9 +47,9 @@ user_input = st.text_area("Enter your text here:", placeholder="e.g. I absolutel
 # ---------------------------------------
 if st.button("Analyze Sentiment"):
     if not user_input.strip():
-        st.warning(" Please enter some text first.")
+        st.warning("⚠️ Please enter some text first.")
     else:
-        # Tokenize
+        # Tokenize input
         inputs = tokenizer(
             user_input,
             return_tensors="pt",
@@ -47,7 +59,7 @@ if st.button("Analyze Sentiment"):
         )
         inputs = {k: v.to(device) for k, v in inputs.items()}
 
-        # Predict
+        # Predict sentiment
         with torch.no_grad():
             outputs = model(**inputs)
             probs = torch.nn.functional.softmax(outputs.logits, dim=1)
@@ -66,4 +78,4 @@ if st.button("Analyze Sentiment"):
 # Footer
 # =======================================
 st.markdown("---")
-st.caption("Built with  using BERT and Streamlit")
+st.caption("Built with ❤️ using BERT and Streamlit")
